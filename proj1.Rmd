@@ -17,7 +17,7 @@ rand <- rnorm(1)
 ```
 
 ## Project 1: Movement
-Submitted by Andrew Chang on `r date` for the Johns Hopkins Reproducible Research course for `rand` credits
+Submitted by Andrew Chang on `r date` for the Johns Hopkins Reproducible Research course for `r rand` credits
 
 ```{r readdata}
 readAct <- read.csv("C:/Users/arkai/Documents/R/projects/DSS05_RepRes/repdata_data_activity/activity.csv", 
@@ -60,13 +60,16 @@ dim(actIntvl)
 ggplot(data = actIntvl, aes(interval, avg_intvl_steps)) + 
         geom_line()
 
-nullsteps <- readAct %>%
+nullStep <- readAct %>%
         select(
                 steps, date, interval
         ) %>%
-        filter(is.na(steps)) %>%
+        filter(is.na(steps))
+
+nullStepRows <- nullStep %>%
         count()
 
+nullStepCount <- nullStepRows$n
 
 # actDaily %>%
 #         filter(
@@ -75,7 +78,33 @@ nullsteps <- readAct %>%
 
 ```
 
-The number of 
+There are `r nullStepCount` missing values in the dataset.  
+
+
+```{r updatemissing}
+
+avgSteps <- nullStep %>%
+        inner_join(actIntvl, by = "interval") %>%
+        select(
+                date,
+                interval,
+                avg_intvl_steps
+        )
+
+readAct0 <- readAct %>%
+        left_join(avgSteps, by = c("date", "interval")) %>%
+        mutate(
+                steps = ifelse(is.na(steps), avg_intvl_steps, steps)
+        )
+        
+nullRA0 <- readAct0 %>%
+        select(
+                steps, date, interval
+        ) %>%
+        filter(is.na(steps))
+dim(nullRA0)
+
+```
 
 ## Including Plots
 
