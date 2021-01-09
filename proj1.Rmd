@@ -1,0 +1,88 @@
+---
+title: "proj1"
+author: "Drew"
+date: "1/6/2021"
+output: pdf_document
+---
+
+```{r setoptions,echo=FALSE,include=FALSE}
+library(datasets); library(knitr); library(tidyverse); library(xtable); library(ggplot2)
+library(grid); library(gridExtra)
+options(xtable.comment = FALSE)
+```
+
+```{r computetime,echo=FALSE}
+date <- format(Sys.time(), "%b %d %Y")
+rand <- rnorm(1)
+```
+
+## Project 1: Movement
+Submitted by Andrew Chang on `r date` for the Johns Hopkins Reproducible Research course for `rand` credits
+
+```{r readdata}
+readAct <- read.csv("C:/Users/arkai/Documents/R/projects/DSS05_RepRes/repdata_data_activity/activity.csv", 
+                    colClasses = c("numeric", "POSIXct", "integer")) 
+
+?read.csv
+
+summary(readAct)
+dim(readAct)
+head(readAct)
+
+actDaily <- readAct %>%
+        select(
+                date, steps
+        ) %>%
+        group_by(date) %>%
+        summarize(
+                day_steps = sum(steps, na.rm = TRUE)
+        )
+
+actDailyMean <- mean(actDaily$day_steps, na.rm = TRUE)
+actDailyMed <- median(actDaily$day_steps, na.rm = TRUE)
+
+plot(actDaily)
+
+ggplot(data = actDaily, aes(day_steps)) + 
+        geom_histogram()
+
+actIntvl <- readAct %>%
+        select(
+                date, steps, interval
+        ) %>%
+        group_by(interval) %>%
+        summarize(
+                avg_intvl_steps = mean(steps, na.rm = TRUE)
+        )
+
+dim(actIntvl)
+
+ggplot(data = actIntvl, aes(interval, avg_intvl_steps)) + 
+        geom_line()
+
+nullsteps <- readAct %>%
+        select(
+                steps, date, interval
+        ) %>%
+        filter(is.na(steps)) %>%
+        count()
+
+
+# actDaily %>%
+#         filter(
+#                 day_steps == max(actDaily$day_steps, na.rm = TRUE)
+#         )
+
+```
+
+The number of 
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r miscplots, echo=FALSE}
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
