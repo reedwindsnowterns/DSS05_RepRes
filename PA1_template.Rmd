@@ -1,0 +1,133 @@
+---
+output: pdf_document
+---
+
+```{r setoptions,echo=TRUE,include=FALSE}
+library(datasets); library(knitr); library(tidyverse); library(xtable); library(ggplot2)
+library(grid); library(gridExtra)
+options(xtable.comment = FALSE)
+```
+
+```{r computetime,echo=TRUE}
+date <- format(Sys.time(), "%b %d %Y")
+rand <- rnorm(1)
+```
+
+## Project 1: Daily Step Movement
+Submitted by Andrew Chang on `r date` for the Johns Hopkins Reproducible Research course
+
+```{r readdata,echo=TRUE}
+readAct <- read.csv("C:/Users/arkai/Documents/R/projects/DSS05_RepRes/repdata_data_activity/activity.csv", 
+                    colClasses = c("numeric", "POSIXct", "integer")) 
+```
+
+```{r daysteps,warning=FALSE,message=FALSE,fig.height=3,fig.width=4}
+actDaily <- readAct %>%
+        select(
+                date, steps
+        ) %>%
+        group_by(date) %>%
+        summarize(
+                day_steps = sum(steps, na.rm = TRUE)
+        )
+
+actDailyMean <- round(mean(actDaily$day_steps, na.rm = TRUE), 1)
+actDailyMed <- round(median(actDaily$day_steps, na.rm = TRUE), 1)
+
+ggplot(data = actDaily, aes(day_steps)) + 
+        geom_histogram()
+```
+
+The mean and median number of steps taken each day are `r actDailyMean` and `r actDailyMed`, respectively. 
+
+```{r intvl,echo=TRUE,warning=FALSE,message=FALSE,fig.height=3,fig.width=4}
+actIntvl <- readAct %>%
+        select(
+                date, steps, interval
+        ) %>%
+        group_by(interval) %>%
+        summarize(
+                avg_intvl_steps = mean(steps, na.rm = TRUE)
+        )
+
+maxIntvlSteps <- round(max(actIntvl$avg_intvl_steps, na.rm = TRUE), 1)
+maxIntvl <- actIntvl$interval[which.max(actIntvl$avg_intvl_steps)]
+
+ggplot(data = actIntvl, aes(interval, avg_intvl_steps)) + 
+        geom_line()
+
+nullStep <- readAct %>%
+        select(
+                steps, date, interval
+        ) %>%
+        filter(is.na(steps))
+
+nullStepRows <- nullStep %>%
+        count()
+
+nullStepCount <- nullStepRows$n
+```
+
+The interval with the highest average daily step count is `r maxIntvl` with `r maxIntvlSteps` steps.
+
+After the imputation of missing values, there are `r nullStepCount` missing values in the dataset.  
+
+
+```{r updatemissing,echo=TRUE,warning=FALSE,message=FALSE,fig.height=3,fig.width=4}
+
+avgSteps <- nullStep %>%
+        inner_join(actIntvl, by = "interval") %>%
+        select(
+                date,
+                interval,
+                avg_intvl_steps
+        )
+
+readAct0 <- readAct %>%
+        left_join(avgSteps, by = c("date", "interval")) %>%
+        mutate(
+                steps = ifelse(is.na(steps), avg_intvl_steps, steps)
+        )
+        
+nullRA0 <- readAct0 %>%
+        select(
+                steps, date, interval
+        ) %>%
+        filter(is.na(steps))
+
+actDaily_impAvg <- readAct0 %>%
+        select(
+                date, steps
+        ) %>%
+        group_by(date) %>%
+        summarize(
+                day_steps = sum(steps, na.rm = TRUE)
+        )
+
+ggplot(data = actDaily_impAvg, aes(day_steps)) + 
+        geom_histogram()
+
+```
+
+```{r weekend,warning=FALSE,message=FALSE,fig.height=3,fig.width=4}
+
+readAct_wkpt <- readAct0 %>%
+        mutate(
+                weekpart = factor(ifelse(weekdays(date) %in% c("Saturday", "Sunday"), "weekend", "weekday"))
+        )
+
+actDaily_wkptAvg <- readAct_wkpt %>%
+        select(
+                date, weekpart, steps
+        ) %>%
+        group_by(date, weekpart) %>%
+        summarize(
+                day_steps = sum(steps, na.rm = TRUE)
+        )
+
+ggplot(data = actDaily_wkptAvg, aes(day_steps)) + 
+        geom_histogram() + 
+        facet_grid(rows = vars(weekpart))
+
+```
+
